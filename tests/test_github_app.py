@@ -228,6 +228,7 @@ def test_pat_identity_falls_back_when_app_is_not_configured() -> None:
     assert calls == ["https://api.github.com/user", "https://api.github.com/user/repos"]
 
 
+@pytest.mark.skip(reason="a2z2k26 fleet pin: GitHub Enterprise API hosts are refused")
 def test_enterprise_url_routes_app_and_client_requests_without_double_slashes() -> None:
     base = "https://ghe.example/api/v3/"
     calls: list[tuple[str, str]] = []
@@ -257,6 +258,7 @@ def test_enterprise_url_routes_app_and_client_requests_without_double_slashes() 
     ]
 
 
+@pytest.mark.skip(reason="a2z2k26 fleet pin: GitHub Enterprise API hosts are refused")
 def test_enterprise_pat_requests_use_configured_api_base() -> None:
     calls: list[str] = []
 
@@ -404,6 +406,7 @@ def test_401_refreshes_the_credential_once() -> None:
     assert attempts == 2
 
 
+@pytest.mark.skip(reason="a2z2k26 fleet pin: GitHub Enterprise API hosts are refused")
 def test_client_close_clears_app_jwt_and_auth_metadata() -> None:
     client = GitHubClient(
         env={
@@ -622,3 +625,17 @@ def test_successful_write_result_contains_attribution() -> None:
         "auth_method": "github-app",
         "actor": "jarpis-bot[bot]",
     }
+
+
+@pytest.mark.parametrize("base", ["https://evil.example.com", "https://api.github.com.evil.example",
+                                  "https://ghe.example.com/api/v3", "https://api.github.com:8443"])
+def test_fleet_pin_rejects_non_github_api_base(base: str) -> None:
+    from github_app.auth import validate_api_base
+    with pytest.raises(GitHubAuthError):
+        validate_api_base(base)
+
+
+def test_fleet_pin_accepts_api_github_com() -> None:
+    from github_app.auth import validate_api_base
+    assert validate_api_base("https://api.github.com") == "https://api.github.com"
+    assert validate_api_base(None) == "https://api.github.com"

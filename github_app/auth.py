@@ -48,6 +48,10 @@ def validate_api_base(raw: str | None = None) -> str:
         raise GitHubAuthError("GITHUB_API_URL contains an invalid port") from exc
     if any(ord(char) < 0x20 or ord(char) == 0x7f for char in value):
         raise GitHubAuthError("GITHUB_API_URL contains invalid control characters")
+    # a2z2k26 fleet pin (FA-05-07): credentials only ever go to api.github.com, whatever GITHUB_API_URL or the
+    # plugin's api_url setting say. A redirected base would receive the signed App JWT and installation token.
+    if parsed.hostname.lower() != "api.github.com" or parsed.port not in (None, 443):
+        raise GitHubAuthError("fleet pin: only https://api.github.com is allowed as the GitHub API base")
     return urllib.parse.urlunsplit(("https", parsed.netloc.lower(), parsed.path.rstrip("/"), "", "")).rstrip("/")
 
 
